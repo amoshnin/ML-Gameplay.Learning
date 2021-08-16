@@ -1,12 +1,3 @@
-"""
-The classic game of flappy bird. Make with python
-and pygame. Features pixel perfect collision using masks :o
-
-Date Modified:  August 16, 2021
-Author: Artem Moshnin
-Estimated Work Time: 5 hours
-"""
-
 import install_requirements
 import pygame
 import os
