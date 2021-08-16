@@ -31,7 +31,7 @@ from game_functions.draw_window import draw_window
 
 gen = 0
 
-def eval_genomes(genomes, config):
+def evaluate_genomes(genomes, config):
     """
     runs the simulation of the current population of
     birds and sets their fitness based on the distance they
@@ -154,7 +154,7 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 50)
+    winner = p.run(evaluate_genomes, 50)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))
