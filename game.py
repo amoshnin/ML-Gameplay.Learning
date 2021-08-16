@@ -9,194 +9,27 @@ Estimated Work Time: 5 hours
 
 import install_requirements
 import pygame
-import random
 import os
 import time
 import neat
 import visualization
 import pickle
 
-from game_components.bird import Bird
-
-
 pygame.font.init()  # init font
 
 WIN_WIDTH = 600
 WIN_HEIGHT = 800
 FLOOR = 730
-STAT_FONT = pygame.font.SysFont("comicsans", 50)
-END_FONT = pygame.font.SysFont("comicsans", 70)
-DRAW_LINES = False
-
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption("Flappy Bird")
 
-pipe_img = pygame.transform.scale2x(pygame.image.load(os.path.join("images","pipe.png")).convert_alpha())
-bg_img = pygame.transform.scale(pygame.image.load(os.path.join("images","background.png")).convert_alpha(), (600, 900))
-base_img = pygame.transform.scale2x(pygame.image.load(os.path.join("images","base.png")).convert_alpha())
+from game_components.bird import Bird
+from game_components.base import Base
+from game_components.pipe import Pipe
+
+from game_functions.draw_window import draw_window
 
 gen = 0
-
-class Pipe():
-    """
-    represents a pipe object
-    """
-    GAP = 200
-    VEL = 5
-
-    def __init__(self, x):
-        """
-        initialize pipe object
-        :param x: int
-        :param y: int
-        :return" None
-        """
-        self.x = x
-        self.height = 0
-
-        # where the top and bottom of the pipe is
-        self.top = 0
-        self.bottom = 0
-
-        self.PIPE_TOP = pygame.transform.flip(pipe_img, False, True)
-        self.PIPE_BOTTOM = pipe_img
-
-        self.passed = False
-
-        self.set_height()
-
-    def set_height(self):
-        """
-        set the height of the pipe, from the top of the screen
-        :return: None
-        """
-        self.height = random.randrange(50, 450)
-        self.top = self.height - self.PIPE_TOP.get_height()
-        self.bottom = self.height + self.GAP
-
-    def move(self):
-        """
-        move pipe based on vel
-        :return: None
-        """
-        self.x -= self.VEL
-
-    def draw(self, win):
-        """
-        draw both the top and bottom of the pipe
-        :param win: pygame window/surface
-        :return: None
-        """
-        # draw top
-        win.blit(self.PIPE_TOP, (self.x, self.top))
-        # draw bottom
-        win.blit(self.PIPE_BOTTOM, (self.x, self.bottom))
-
-
-    def collide(self, bird, win):
-        """
-        returns if a point is colliding with the pipe
-        :param bird: Bird object
-        :return: Bool
-        """
-        bird_mask = bird.get_mask()
-        top_mask = pygame.mask.from_surface(self.PIPE_TOP)
-        bottom_mask = pygame.mask.from_surface(self.PIPE_BOTTOM)
-        top_offset = (self.x - bird.x, self.top - round(bird.y))
-        bottom_offset = (self.x - bird.x, self.bottom - round(bird.y))
-
-        b_point = bird_mask.overlap(bottom_mask, bottom_offset)
-        t_point = bird_mask.overlap(top_mask,top_offset)
-
-        if b_point or t_point:
-            return True
-
-        return False
-
-class Base:
-    """
-    Represnts the moving floor of the game
-    """
-    VEL = 5
-    WIDTH = base_img.get_width()
-    IMG = base_img
-
-    def __init__(self, y):
-        """
-        Initialize the object
-        :param y: int
-        :return: None
-        """
-        self.y = y
-        self.x1 = 0
-        self.x2 = self.WIDTH
-
-    def move(self):
-        """
-        move floor so it looks like its scrolling
-        :return: None
-        """
-        self.x1 -= self.VEL
-        self.x2 -= self.VEL
-        if self.x1 + self.WIDTH < 0:
-            self.x1 = self.x2 + self.WIDTH
-
-        if self.x2 + self.WIDTH < 0:
-            self.x2 = self.x1 + self.WIDTH
-
-    def draw(self, win):
-        """
-        Draw the floor. This is two images that move together.
-        :param win: the pygame surface/window
-        :return: None
-        """
-        win.blit(self.IMG, (self.x1, self.y))
-        win.blit(self.IMG, (self.x2, self.y))
-
-def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
-    """
-    draws the windows for the main game loop
-    :param win: pygame window surface
-    :param bird: a Bird object
-    :param pipes: List of pipes
-    :param score: score of the game (int)
-    :param gen: current generation
-    :param pipe_ind: index of closest pipe
-    :return: None
-    """
-    if gen == 0:
-        gen = 1
-    win.blit(bg_img, (0,0))
-
-    for pipe in pipes:
-        pipe.draw(win)
-
-    base.draw(win)
-    for bird in birds:
-        # draw lines from bird to pipe
-        if DRAW_LINES:
-            try:
-                pygame.draw.line(win, (255,0,0), (bird.x+bird.img.get_width()/2, bird.y + bird.img.get_height()/2), (pipes[pipe_ind].x + pipes[pipe_ind].PIPE_TOP.get_width()/2, pipes[pipe_ind].height), 5)
-                pygame.draw.line(win, (255,0,0), (bird.x+bird.img.get_width()/2, bird.y + bird.img.get_height()/2), (pipes[pipe_ind].x + pipes[pipe_ind].PIPE_BOTTOM.get_width()/2, pipes[pipe_ind].bottom), 5)
-            except:
-                pass
-        # draw bird
-        bird.draw(win)
-
-    # score
-    score_label = STAT_FONT.render("Score: " + str(score),1,(255,255,255))
-    win.blit(score_label, (WIN_WIDTH - score_label.get_width() - 15, 10))
-
-    # generations
-    score_label = STAT_FONT.render("Generations: " + str(gen-1),1,(255,255,255))
-    win.blit(score_label, (10, 10))
-
-    # alive
-    score_label = STAT_FONT.render("Alive: " + str(len(birds)),1,(255,255,255))
-    win.blit(score_label, (10, 50))
-
-    pygame.display.update()
-
 
 def eval_genomes(genomes, config):
     """
@@ -293,7 +126,7 @@ def eval_genomes(genomes, config):
                 ge.pop(birds.index(bird))
                 birds.pop(birds.index(bird))
 
-        draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
+        draw_window(WIN, birds, pipes, base, score, gen, pipe_ind, WIN_WIDTH)
 
         # break if score gets large enough
         '''if score > 20:
